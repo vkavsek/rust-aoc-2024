@@ -20,14 +20,15 @@ today = ["chrono"]
 test_lib = []
 
 [dependencies]
-atoi = "2.0.0"
-
 # Template dependencies
-chrono = { version = "0.4.38", optional = true }
-dhat = { version = "0.3.3", optional = true }
-itertools = "0.13.0"
-pico-args = "0.5.0"
-regex = "1.11.1"
-tinyjson = "2.5.1"
+chrono = { version = "0.4", optional = true }
+dhat = { version = "0.3", optional = true }
+pico-args = "0.5"
+tinyjson = "2"
 
 # Solution dependencies
+atoi = "2"
+indexmap = "2"
+indicatif = "0.17"
+itertools = "0.13"
+regex = "1"
