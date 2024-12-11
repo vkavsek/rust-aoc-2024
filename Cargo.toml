@@ -28,7 +28,7 @@ tinyjson = "2"
 # Solution dependencies
 atoi = "2"
 indexmap = "2"
-indicatif = { version = "0.17" }
+indicatif = { version = "0.17", features = ["rayon"] }
 itertools = "0.13"
 regex = "1"
 rayon = "1"
