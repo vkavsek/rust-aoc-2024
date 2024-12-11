@@ -37,16 +37,31 @@ impl<T: Copy> Grid<T> {
     }
 }
 
-impl<T: Copy + PartialEq> Grid<T> {
+impl<T: PartialEq> Grid<T> {
+    /// Finds the first position of the needle. Row by row.
     #[inline]
     pub fn find(&self, needle: T) -> Option<Point> {
         let pos = self
             .field
             .iter()
             .position(|v| *v == needle)
-            .map(|pos| self.get_coord_from_arr_index(pos));
+            .map(|i| self.get_coord_from_arr_index(i));
 
         pos
+    }
+
+    /// Finds all the positions where the value matches the needle and returns them in a Vector.
+    #[inline]
+    pub fn find_all(&self, needle: T) -> Vec<Point> {
+        let positions = self
+            .field
+            .iter()
+            .enumerate()
+            .filter(|(_, v)| **v == needle)
+            .map(|(i, _)| self.get_coord_from_arr_index(i))
+            .collect::<Vec<_>>();
+
+        positions
     }
 }
 
@@ -199,6 +214,24 @@ mod tests {
         grid[mid_coord] = b'^';
         assert_eq!(mid_coord, grid.find(b'^').unwrap());
         assert_eq!(grid[mid_coord], b'^');
+    }
+
+    #[test]
+    fn grid_find_all_working() {
+        let input = "89010123
+78121874
+87430965
+96549874
+45678903
+32019012
+01329801
+10456732";
+
+        let grid = Grid::parse(input);
+        let pts = grid.find_all(b'0');
+
+        assert_eq!(9, pts.len());
+        assert!(pts.contains(&Point::new(2, 0)));
     }
 
     #[test]

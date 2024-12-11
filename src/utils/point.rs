@@ -1,7 +1,7 @@
 //! An implementation of a 2-dimensional point.
 use std::{
     hash::Hash,
-    ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
+    ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
 // POINT
@@ -93,6 +93,14 @@ impl MulAssign for Point {
     fn mul_assign(&mut self, rhs: Self) {
         self.x *= rhs.x;
         self.y *= rhs.y;
+    }
+}
+
+impl Neg for Point {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Point::new(-self.x, -self.y)
     }
 }
 
