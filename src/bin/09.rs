@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     iter,
     ops::{Deref, DerefMut},
 };
@@ -40,69 +41,107 @@ pub fn part_one(input: &str) -> Option<usize> {
     Some(res)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    let repr = generate_chunked_memory_representation(input);
+pub fn part_two(input: &str) -> Option<usize> {
+    let mut repr = generate_memory_representation(input);
+    // last file end range
+    let mut last_file_er = repr.len();
+    let mut checked_file_nums = HashSet::with_capacity(2000);
 
-    let _ = repr.iter().filter(|mc| mc.variant.is_some());
+    'outer: loop {
+        let mut operating_file_num = None;
+        let Some(lf_er) = repr[..last_file_er]
+            .iter()
+            .enumerate()
+            .rev()
+            .find_map(|(i, v)| {
+                let x = (*v)?;
 
-    None
+                if checked_file_nums.contains(&x) {
+                    None
+                } else {
+                    operating_file_num = Some(x);
+                    Some(i)
+                }
+            })
+        else {
+            break;
+        };
+        last_file_er = lf_er;
+
+        let last_file_len = repr[..=last_file_er]
+            .iter()
+            .rev()
+            .take_while(|mc| mc.is_some() && mc == &&operating_file_num)
+            .count();
+
+        let last_file_sr = last_file_er - (last_file_len - 1);
+
+        if !checked_file_nums.insert(repr[last_file_sr].unwrap()) {
+            last_file_er = last_file_sr;
+            continue;
+        }
+
+        let mut find_empty_id = 0;
+        'inner: loop {
+            let Some(mut first_empty_sr) = repr[find_empty_id..]
+                .iter()
+                .enumerate()
+                .find_map(|(i, v)| if v.is_none() { Some(i) } else { None })
+            else {
+                last_file_er = last_file_sr;
+                continue 'outer;
+            };
+
+            first_empty_sr += find_empty_id;
+
+            if first_empty_sr >= last_file_sr {
+                last_file_er = last_file_sr;
+                continue 'outer;
+            }
+
+            let first_empty_len = repr[first_empty_sr..]
+                .iter()
+                .take_while(|mc| mc.is_none())
+                .count();
+
+            let first_empty_er = first_empty_sr + (first_empty_len.saturating_sub(1));
+
+            if last_file_len > first_empty_len {
+                find_empty_id = first_empty_er + 1;
+                continue 'inner;
+            } else {
+                // swap
+                for i in 0..last_file_len {
+                    let e_id = first_empty_sr + i;
+                    let f_id = last_file_sr + i;
+                    repr.swap(e_id, f_id);
+                }
+
+                last_file_er = last_file_sr;
+                continue 'outer;
+            }
+        }
+    }
+
+    let res: usize = repr
+        .iter()
+        .enumerate()
+        .filter_map(|(i, o)| o.map(|v| v * i))
+        .sum();
+
+    Some(res)
 }
 
 // STRUCTS
-
-/// Continous Memory Chunk
-/// `variant`:
-/// `Some(file_num)` symbolizes this is a collection of continous file chunks
-/// `None` symbolizes this is a collection of continoous empty space chunks
-/// `len`:
-///  Represents the length of this collection of continous memory chunks
-#[derive(Debug)]
-struct ContMemoryChunk {
-    variant: Option<usize>,
-    len: usize,
-}
-impl ContMemoryChunk {
-    fn new(variant: Option<usize>, len: usize) -> Self {
-        ContMemoryChunk { variant, len }
-    }
-}
-
-struct ChunkedMemory(Vec<ContMemoryChunk>);
-
-impl From<Memory> for ChunkedMemory {
-    fn from(value: Memory) -> Self {
-        todo!()
-    }
-}
-impl Deref for ChunkedMemory {
-    type Target = Vec<ContMemoryChunk>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-impl DerefMut for ChunkedMemory {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-/// Parsed input:
 /// Each memory chunk is represented with:
 ///     - `Some(file_num)` if it's a file chunk
 ///     - `None` if it's a chunk of empty space
+///
+/// num_of_discrete_chunks represent the length of this array if we combine all continous repeating elements
+/// into discrete chunks. ie: 1123444 -> 1234
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct Memory(Vec<Option<usize>>);
-impl Memory {
-    fn rewrite_from_chunked(&mut self, chunked: ChunkedMemory) {
-        todo!()
-    }
-}
 
-impl From<ChunkedMemory> for Memory {
-    fn from(value: ChunkedMemory) -> Self {
-        todo!()
-    }
-}
 impl Deref for Memory {
     type Target = Vec<Option<usize>>;
 
@@ -117,7 +156,6 @@ impl DerefMut for Memory {
 }
 
 // FUNCTIONS
-
 fn generate_memory_representation(input: &str) -> Memory {
     let input = input.trim();
     let bytes_iter = input
@@ -139,29 +177,6 @@ fn generate_memory_representation(input: &str) -> Memory {
     }
 
     Memory(res)
-}
-fn generate_chunked_memory_representation(input: &str) -> ChunkedMemory {
-    let input = input.trim();
-
-    let bytes_iter = input
-        .as_bytes()
-        .iter()
-        .map(|&c| atoi::ascii_to_digit::<usize>(c).expect("unable to convert char to usize"));
-
-    let len: usize = bytes_iter.clone().count();
-
-    let mut file_num: usize = 0;
-    let mut res = Vec::with_capacity(len);
-    for (i, chunk_len) in bytes_iter.enumerate() {
-        if i & 1 == 0 {
-            res.push(ContMemoryChunk::new(Some(file_num), chunk_len));
-            file_num += 1;
-        } else {
-            res.push(ContMemoryChunk::new(None, chunk_len));
-        }
-    }
-
-    ChunkedMemory(res)
 }
 
 #[allow(dead_code)]
